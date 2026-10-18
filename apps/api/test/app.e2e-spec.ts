@@ -4,6 +4,16 @@ import { Test } from "@nestjs/testing";
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
+const allocateDatabase = vi.hoisted(() =>
+  vi.fn(() => {
+    throw new Error("Liveness must not allocate database access");
+  }),
+);
+
+vi.mock("../src/database/prisma.factory.js", () => ({
+  createPrismaClient: allocateDatabase,
+}));
+
 const frontendOrigin = "http://localhost:6789";
 
 describe.each([
@@ -17,6 +27,8 @@ describe.each([
   let app: INestApplication<Server>;
 
   beforeAll(async () => {
+    allocateDatabase.mockClear();
+
     vi.stubEnv("DATABASE_URL", databaseUrl);
 
     vi.stubEnv("SHADOW_DATABASE_URL", undefined);
@@ -48,16 +60,25 @@ describe.each([
   it("does not expose the endpoint without the API prefix", () =>
     request(app.getHttpServer()).get("/health").expect(404));
 
-  it("allows the configured frontend origin", () => {
-    return request(app.getHttpServer())
+  it("allows the configured frontend origin", () =>
+    request(app.getHttpServer())
       .get("/api/health")
       .set("Origin", frontendOrigin)
       .expect(200)
-      .expect("Access-Control-Allow-Origin", frontendOrigin);
+      .expect("Access-Control-Allow-Origin", frontendOrigin));
+
+  it("keeps module initialization and liveness free of database allocation", async () => {
+    expect(allocateDatabase).not.toHaveBeenCalled();
+
+    await request(app.getHttpServer()).get("/api/health").expect(200);
+
+    expect(allocateDatabase).not.toHaveBeenCalled();
   });
 
   afterAll(async () => {
     await app?.close();
+
+    expect(allocateDatabase).not.toHaveBeenCalled();
 
     vi.unstubAllEnvs();
 

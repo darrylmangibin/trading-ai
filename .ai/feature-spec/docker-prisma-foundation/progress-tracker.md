@@ -6,20 +6,20 @@
 
 ## Current Goal
 
-- Task 03: Prisma Database Access; implement the approved lazy boundary and guarded tooling.
+- Task 03 Completed; next is Task 04 Database Test Infrastructure, not started.
 
 ## Completed
 
-- Tasks 01–02 Completed: Local Database Containers and Frontend Test Infrastructure; Check PASS on 2026-10-18.
+- Tasks 01–03 Completed; Check PASS on 2026-10-18. Task 03: Prisma Database Access.
 
 ## In Progress
 
-- Task 03 drafted: lazy provider, guarded Prisma CLI/schema, hermetic HTTP characterization and documentation.
-- Verification: pre-wiring HTTP 9/9 and interim targeted lint passed; user-generated client gates final checks.
+- None; Task 04 has not started.
+- Check 03 PASS: lint/types/format/build/imports, generation/validation, unit 84/84, HTTP 12/12; 14 covered, no gaps.
 
 ## Next Up
 
-1. User runs API `prisma:generate` and `prisma:validate`; then finish Task 03 lint/types/build/HTTP verification.
+1. `/test docker-prisma-foundation 04` in a fresh context; isolated DB test infrastructure is not started.
 
 ## Open Questions
 
@@ -39,7 +39,7 @@
 - Tasks 02 and 04 are test-infrastructure tasks built by `/test`; remaining tasks use `/develop`.
 - Task 04 introduces the shared test-container image before Tasks 06/07 add API/web runtime services.
 - Exact approved architecture and conditional test-policy wording applied to four rule files.
-- Task 02 exact pins agent-installed by user delegation; Task 03 dependencies, generation and migrations stay user-performed.
+- Task 02 pins agent-installed by delegation; Task 03 pins user-installed, generation later delegated; migrations remain user-performed.
 - Repository, package metadata, and pinned upstream sources inspected during planning.
 - Plan verification passed: 18 design sections, all 13 criteria assigned, seven tasks of at most 101 lines.
 - Final review clarified in-container compilation and controlled identity-rejection cases; real DB evidence stays distinct.
@@ -54,3 +54,5 @@
 - Nine local scenarios covered with no gaps; assigned automated levels n/a; HTTP regression evidence is separate.
 - Current artifacts: `trading-test01-a26d514e/0a690168` and `trading-check01-20261018/4ecdf7e1` under local Temp.
 - All current projects down, both sentinels absent; eight new synthetic volumes retained; prior artifacts preserved.
+- Task 03 checkpoint de34228; owner delegated generation, missing tests, verification and a second local commit.
+- Task 03 real dev/shadow identities passed in an owned synthetic project; all new containers/volumes removed.

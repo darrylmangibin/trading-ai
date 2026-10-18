@@ -10,7 +10,7 @@ The existing foundation is documented in `.ai/project-overview.md` under Module 
 
 ## In Progress
 
-- `docker-prisma-foundation` — In Progress; local database containers and frontend component test infrastructure verified. Prisma and application Docker work remains planned. See [design](feature-spec/docker-prisma-foundation/system-design.md) and [tracker](feature-spec/docker-prisma-foundation/progress-tracker.md).
+- `docker-prisma-foundation` — In Progress; local database containers, frontend component tests and Task 03 Prisma access verified. Tasks 04–07 remain planned. See [design](feature-spec/docker-prisma-foundation/system-design.md) and [tracker](feature-spec/docker-prisma-foundation/progress-tracker.md).
 
 ## Next Up
 

@@ -98,8 +98,94 @@ Follow the cited System Design sections; do not duplicate or silently change the
 
 ## Implementation Record
 
-- **Status (2026-10-18):** In Progress. Scoped plan approved; all six exact dependency pins installed by the user and verified. Model-free schema, guarded CLI configuration, lazy module/provider, and operating documentation drafted. User-performed client generation/validation is the next gate; final verification and new unit tests remain pending.
-- **Existing Tests Updated:** `apps/api/test/app.e2e-spec.ts` now characterizes real AppModule health, prefix, and CORS for absent, malformed, and unreachable DB configuration. Environment is set before dynamic application imports; API test mode ignores environment files.
-- **Pre-wiring evidence:** `fnm exec --using=24.17.0 cmd.exe /d /c npm run test:e2e` passed 1 file / 9 tests before importing DatabaseModule. Post-wiring HTTP/build/typecheck require the user-generated client and have not run.
-- **Interim lint:** targeted API `eslint --max-warnings=0 --fix` passed for database configuration, Prisma CLI config, root module, existing HTTP test, and both Vitest configs. Provider/factory/module lint and final format/type/build checks remain pending generation.
-- **Ownership:** no migration created/applied, no generated file hand-edited, no private configuration opened, and no rule file changed. Existing generated-source lint/format exclusions reused; Git exclusion added. New unit specifications remain assigned to `/test docker-prisma-foundation 03`.
+- **Status (2026-10-18): Completed — Check PASS.** The model-free client generates and validates; lazy Prisma wiring, safe migration preflight and assigned unit/HTTP coverage are verified.
+- **Authorization:** The owner requested a checkpoint commit followed by completing only Task 03, its tests/checks, and a second local commit. Checkpoint `de34228` preserves all 17 reviewed pre-existing Task 03 files. The later delegation authorizes client generation/validation; no dependency installation or migration was performed.
+- **Historical evidence:** Pre-wiring HTTP characterization passed 9/9 before DatabaseModule was imported. Final post-wiring evidence below supersedes the earlier pending-generation state.
+- **Existing Tests Updated:** `apps/api/test/app.e2e-spec.ts` retains health/prefix/CORS checks for absent, malformed and unreachable DB settings, and adds a fail-fast allocation double plus assertions during initialization, liveness and closure. Test configuration is set before application imports.
+- **Boundaries:** No application entities, migration, diagnostic command, database test harness, product endpoint, Task 04 work, push or trading operation was introduced. Generated source was produced by Prisma, remains ignored and was never hand-edited.
+
+### Source Files
+
+- `.gitignore` — Exclude generated Prisma source.
+- `apps/api/.env.example` — Document database/shadow variable names with placeholders.
+- `apps/api/package.json` — Pin the approved packages and expose explicit Prisma scripts.
+- `package-lock.json` — User-generated dependency lock changes preserved in checkpoint de34228.
+- `apps/api/prisma/schema.prisma` — Model-free PostgreSQL schema and ESM generator contract.
+- `apps/api/prisma7.config.ts` — Quiet API-local configuration and command-derived migration preflight.
+- `apps/api/src/app.module.ts` — Wire the lazy database module; ignore environment files in tests.
+- `apps/api/src/database/database.config.ts` — Typed safe errors and runtime/migration URL guards.
+- `apps/api/src/database/database.module.ts` — Export the injectable database provider.
+- `apps/api/src/database/database.service.ts` — Allocate once on demand and await allocated-client shutdown.
+- `apps/api/src/database/prisma.factory.ts` — Create the pg adapter and generated ESM client on demand.
+- `apps/api/src/database/database.config.spec.ts` — 54 URL, migration-target and redaction unit cases.
+- `apps/api/src/database/database.service.spec.ts` — 7 provider lifecycle and module-wiring unit cases.
+- `apps/api/src/database/prisma-config.spec.ts` — 23 guarded CLI and environment-isolation unit cases.
+- `apps/api/test/app.e2e-spec.ts` — 12 real-AppModule HTTP cases across three database configurations.
+- `apps/api/vitest.config.ts` — Set hermetic test environment before application imports.
+- `apps/api/vitest.config.e2e.ts` — Apply the same hermetic HTTP-test configuration.
+- `docs/local-development.md` — Document explicit generation, migration guards and identity checks.
+- `.ai/feature-spec/docker-prisma-foundation/tasks/03-prisma-database-access.md` — Record implementation, test coverage and Check evidence.
+- `.ai/feature-spec/docker-prisma-foundation/progress-tracker.md` — Record Task 03 completion and the next unstarted task.
+- `.ai/project-progress-tracker.md` — Keep the feature In Progress with an accurate completed-foundation summary.
+
+### Test Files and Coverage
+
+- API unit: `database.config.spec.ts` 54/54; `database.service.spec.ts` 7/7; `prisma-config.spec.ts` 23/23 — **84/84 across 3 files** under `apps/api/src/database/`.
+- API HTTP integration: `apps/api/test/app.e2e-spec.ts` — **12/12 across 1 file**.
+- Web component and real database integration: n/a for Task 03; Task 02 owns web characterization and Task 04 introduces the guarded database level.
+- Audit before writing: lifecycle/configuration/CLI unit coverage missing; HTTP allocation proof partial; existing HTTP contract cases covered. All planned gaps were filled without changing shared test setup.
+
+| # | Scenario / source | Level | Status | Test evidence |
+| --- | --- | --- | --- | --- |
+| 1 | No allocation/config read during construction or module initialization; AC-5/9 | Unit | covered | `database.service.spec.ts` > construction and injectable-module cases |
+| 2 | Allocate on first request and reuse one client; AC-5 | Unit | covered | `database.service.spec.ts` > allocates once on first use |
+| 3 | Unallocated shutdown stays idle; allocated shutdown awaits disconnect; AC-5 | Unit | covered | `database.service.spec.ts` > shutdown cases |
+| 4 | Missing/malformed inputs produce typed, credential-free errors before allocation; AC-5/13 | Unit | covered | `database.config.spec.ts` > rejects inputs / omits credentials; service refusal cases |
+| 5 | PostgreSQL schemes and encoded credentials work with explicit endpoints; AC-5 | Unit | covered | `database.config.spec.ts` > preserves a valid explicit URL |
+| 6 | Native/container development and distinct shadow targets, including loopback aliases; AC-5 | Unit | covered | `database.config.spec.ts` > accepts distinct development and shadow databases |
+| 7 | Missing, test, remote, aliased, malformed or overridden migration targets fail safely; AC-5/13 | Unit | covered | `database.config.spec.ts` > rejects targets / redacts unsafe inputs |
+| 8 | Actual migrate arguments require preflight even in test mode; AC-5/13 | Unit | covered | `prisma-config.spec.ts` > requires guarded targets / supplies validated targets |
+| 9 | URL/schema/from/to/separator overrides fail before defining Prisma configuration; AC-5/13 | Unit | covered | `prisma-config.spec.ts` > rejects CLI target overrides and unsafe target |
+| 10 | Generate/validate need no credentials; test mode skips env files; runtime dotenv path stays API-local and quiet; AC-5/13 | Unit | covered | `prisma-config.spec.ts` > generate/validate, inherited URL and environment cases |
+| 11 | Health returns the unchanged public JSON for all three DB configurations; AC-9 | HTTP | covered | `app.e2e-spec.ts` > serves the health contract |
+| 12 | Unprefixed health remains 404 for all three DB configurations; AC-9 | HTTP | covered | `app.e2e-spec.ts` > does not expose endpoint without API prefix |
+| 13 | Configured frontend CORS origin is preserved for all three configurations; AC-9 | HTTP | covered | `app.e2e-spec.ts` > allows the configured frontend origin |
+| 14 | Real root-module init, health requests and shutdown allocate no DB client; AC-9 | HTTP | covered | `app.e2e-spec.ts` > keeps initialization/liveness free of allocation; closure assertions |
+
+Scenarios: **14 covered, 0 partial, 0 missing, 0 accepted gaps**. Coverage was re-audited from the test bodies after execution.
+
+### Verification — 2026-10-18
+
+All npm commands below were run from the repository root through `fnm exec --using=24.17.0 cmd.exe /d /c`; Node reported `v24.17.0`. Prisma/test commands used `NODE_ENV=test` and cleared inherited `DATABASE_URL`/`SHADOW_DATABASE_URL`, so no private environment file or real credential was inspected.
+
+- `npm run prisma:generate --workspace @trading/api` — PASS, Prisma Client 7.10.1 generated to `src/generated/prisma` from the empty-model schema without database credentials.
+- `npm run prisma:validate --workspace @trading/api` — PASS.
+- Targeted `npm exec --workspace @trading/api -- eslint --max-warnings=0 --fix` covered the task's source/config/test paths; resulting edits were reviewed. An initial test-only `no-new` error was corrected by asserting the constructed service, without disabling the rule.
+- Final read-only lint — PASS: `npm exec --workspace @trading/api -- eslint --max-warnings=0 prisma7.config.ts src/app.module.ts src/database/database.config.ts src/database/database.module.ts src/database/database.service.ts src/database/prisma.factory.ts src/database/database.config.spec.ts src/database/database.service.spec.ts src/database/prisma-config.spec.ts test/app.e2e-spec.ts vitest.config.ts vitest.config.e2e.ts`.
+- `npm run typecheck` — PASS, API and web; targeted API typecheck also passed after adding the specs.
+- `npm run format:check` — PASS, all matched files; only the four owned test files were formatted.
+- `npm run build --workspace @trading/api` — PASS, including generated TypeScript/ESM imports.
+- Compiled import — PASS (`COMPILED_ESM_IMPORT_OK`): `fnm exec --using=24.17.0 node --input-type=module -e 'await import("./apps/api/dist/app.module.js"); const generated = await import("./apps/api/dist/generated/prisma/client.js"); if (typeof generated.PrismaClient !== "function") throw new Error("Generated client export missing"); console.log("COMPILED_ESM_IMPORT_OK");'`. Test mode, PORT 3000, configured local CORS and absent DB URLs; no server or pool started.
+- `npm exec --workspace @trading/api -- vitest list src --filesOnly` — PASS, exactly the three planned source specifications discovered.
+- Final Check unit run: `npm exec --workspace @trading/api -- vitest run src` — PASS, 3 files / 84 tests. This full source level includes all related and feature API unit cases.
+- Final Check HTTP run, after unit completion: `npm run test:e2e` — PASS, 1 file / 12 tests. Levels ran sequentially without watch/retry; earlier test-workflow runs also passed 84/84 and 12/12.
+- `git check-ignore -- apps/api/src/generated/prisma/client.ts` identifies the generated file as ignored; `git ls-files -- apps/api/src/generated` returns no files. No `apps/api/prisma/migrations` directory was created.
+
+### Real Local Identity Evidence
+
+- A fresh `trading-task03-48a03047` Compose project used the committed pinned PostgreSQL image, only `db-dev`, an empty env-file override, and distinct synthetic credentials generated in process memory. Existing projects and volumes were not reused.
+- Quiet Compose validation and `up -d --pull never --no-build --wait --wait-timeout 120 db-dev` passed. Network-authenticated `psql -X -w -A -t -v ON_ERROR_STOP=1 -h db-dev -U trading_dev` ran only `SELECT current_database(), current_user;` against each database.
+- Results: `trading_dev|trading_dev` and `trading_shadow|trading_dev`, both PASS. No application table, product migration or fixture record was written.
+- Container/network cleanup passed. A conservative volume guard initially retained the two new volumes; explicit name/project-label/zero-container-use checks preceded removal. Final project container/volume counts are zero.
+- Credential-free retained summary: `C:/Users/darryl/AppData/Local/Temp/trading-task03-48a03047/identity-evidence.txt`. The temporary folder contains no supplied private configuration or saved credentials.
+
+### Check
+
+- **2026-10-18 — PASS → Completed.** Read-only lint, workspace types, format, API build, explicit generation/validation and compiled imports passed; API unit **84/84**, HTTP **12/12**; **14 covered / 0 partial / 0 missing / 0 accepted**.
+- Acceptance 1 / AC-5: actual model-free generation, validation and compiled imports passed; real local development/shadow identities matched; migration target/preflight scenarios passed. No migration was applied.
+- Acceptance 2 / AC-5/13: lazy allocation/reuse/awaited cleanup, safe typed errors and rejected unsafe targets/overrides passed at the assigned unit level.
+- Acceptance 3 / AC-9: real-AppModule health/prefix/CORS and zero allocation passed for missing, malformed and unreachable DB configuration.
+- Acceptance 4: required lint/types/format/build passed; unassigned web/database levels are n/a, not passing claims.
+- Acceptance 5: implementation/test files, coverage and actual commands/results are recorded here and in both progress summaries.
+- Read-only review of Task 03 production wiring, guards and test bodies found no blocking defect or design divergence. General rule inventories remain user-managed; this task changes only assigned progress records.
+- **Next:** `/test docker-prisma-foundation 04` (test-infrastructure task), with a fresh context. Task 04 was not started; the overall feature remains In Progress.
