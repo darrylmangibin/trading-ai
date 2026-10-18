@@ -6,7 +6,7 @@
 
 ## Current Goal
 
-- Task 03: Prisma Database Access; pre-build review and dependency gate.
+- Task 03: Prisma Database Access; implement the approved lazy boundary and guarded tooling.
 
 ## Completed
 
@@ -14,12 +14,12 @@
 
 ## In Progress
 
-- Task 03 active: scoped plan approved on 2026-10-18; awaiting user-installed package pins.
-- Verification: Check 02 PASS; lint/types/format/build, 21/21 JSDOM cases, 15 covered/0 gaps; empty discovery exits 1.
+- Task 03 drafted: lazy provider, guarded Prisma CLI/schema, hermetic HTTP characterization and documentation.
+- Verification: pre-wiring HTTP 9/9 and interim targeted lint passed; user-generated client gates final checks.
 
 ## Next Up
 
-1. User installs Task 03 package pins (or delegates the exact commands); resume the approved Task 03 plan.
+1. User runs API `prisma:generate` and `prisma:validate`; then finish Task 03 lint/types/build/HTTP verification.
 
 ## Open Questions
 

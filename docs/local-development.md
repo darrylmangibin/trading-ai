@@ -1,7 +1,8 @@
 # Local PostgreSQL development
 
-Task 01 provides PostgreSQL only. The applications still use the native development workflow
-in the [README](../README.md); Prisma and application containers arrive in later tasks.
+Task 01 provides PostgreSQL and Task 03 adds native Prisma tooling and lazy API database access.
+The applications still use the native development workflow in the [README](../README.md);
+application containers arrive in later tasks.
 
 ## Prepare configuration
 
@@ -193,9 +194,93 @@ Update the corresponding private raw password and URL password components, then 
 affected database container and later its application/test service. Confirm network-authenticated
 health and the original persistence record. A failed rotation does not authorize deleting volumes.
 
+## Prisma client and database access
+
+Task 03 uses the exact API packages `@prisma/client@7.10.1`, `@prisma/adapter-pg@7.10.1`,
+`pg@8.23.1`, `prisma@7.10.1`, `@types/pg@8.23.1`, and `dotenv@18.0.8`. The developer installs
+dependencies and generates the client. Run these commands from the repository root on
+Node 24.17.0, after installing the packages:
+
+```powershell
+npm run prisma:generate --workspace @trading/api
+npm run prisma:validate --workspace @trading/api
+npm run typecheck --workspace @trading/api
+npm run build --workspace @trading/api
+```
+
+Generation and validation need no database credentials or running database. The model-free
+schema deliberately defines no application entities and needs no initial migration. Generation
+writes TypeScript to `apps/api/src/generated/prisma`; the ESM generator emits `.js` import
+suffixes for the compiled API. This directory is excluded from Git, lint, and formatting.
+Regenerate explicitly after a schema or Prisma version change; never hand-edit generated files.
+If build/start reports a missing generated client, run the generation command above first.
+
+For database work, privately prepare `apps/api/.env` from `apps/api/.env.example` without
+overwriting an existing file. Supply native `DATABASE_URL` and `SHADOW_DATABASE_URL` using
+the development and shadow URLs shown earlier. Root Compose names `DEV_DATABASE_URL` and
+`DEV_SHADOW_DATABASE_URL` are not automatic native aliases. CLI configuration loads only
+`apps/api/.env`, quietly, without overriding variables already in the environment. It never
+loads root Compose configuration. In test mode, both Prisma configuration and the Nest root
+module ignore environment files.
+
+The API uses ConfigService, allocates its Prisma client only when database work requests it,
+reuses that client, and disconnects an allocated client at application shutdown. Startup,
+module initialization, and `/api/health` neither validate required database credentials nor
+allocate an adapter/pool or connect. A healthy process does not establish database readiness.
+The separate connectivity diagnostic arrives in Task 05; database integration arrives in
+Task 04. Neither is provided by the current HTTP tests.
+
+## Reviewed schema changes and migrations
+
+No product migration is created or applied by Task 03. For a future approved schema change,
+the developer edits the schema and creates a migration for review, then explicitly applies
+the reviewed migration and generates the client:
+
+```powershell
+npm run prisma:migrate:dev --workspace @trading/api -- --create-only --name approved-change-name
+# Review the new prisma/migrations SQL before application.
+npm run prisma:migrate:dev --workspace @trading/api
+npm run prisma:generate --workspace @trading/api
+npm run prisma:validate --workspace @trading/api
+```
+
+`npm run prisma:migrate:deploy --workspace @trading/api` applies already reviewed migrations
+to the same guarded local development target. It is not a production deployment workflow.
+Existing migrations are preserved. Review any drift/reset prompt explicitly; a failure does
+not authorize deleting or reinitializing storage. Startup, build, and test commands never
+generate a client or apply migrations automatically.
+
+Every invocation of `migrate` through `prisma7.config.ts` requires both explicit URLs before
+Prisma database work. Native endpoints allow `localhost` or `127.0.0.1` on port 5554; container
+endpoints allow only `db-dev:5432`. Both URLs must identify the same endpoint/login/password,
+with login `trading_dev`, development database `trading_dev`, and shadow database
+`trading_shadow`. Loopback aliases are compared as the same endpoint, while database names
+remain distinct after decoding. Test/shared/remote targets, missing shadow configuration,
+malformed encoding, URL query parameters/fragments, and CLI URL/schema/from/to overrides
+are rejected with a fixed `DatabaseConfigurationError`. No bypass flag or CREATEDB fallback
+is provided. Use the four documented Prisma scripts; another config is outside this workflow.
+
+The shadow database is migration scratch space on the development instance, not the test
+database. Task 01 provisions it without granting CREATEDB. With the development service
+running, the developer can verify the actual database/login identities using its PostgreSQL
+client; enter the development application password at each hidden prompt:
+
+```powershell
+docker compose exec db-dev psql -X -W -h db-dev -U trading_dev -d trading_dev -c "SELECT current_database(), current_user;"
+docker compose exec db-dev psql -X -W -h db-dev -U trading_dev -d trading_shadow -c "SELECT current_database(), current_user;"
+```
+
+Expected results are `trading_dev` / `trading_dev` and `trading_shadow` / `trading_dev`.
+Record those identities and command outcomes only; do not share passwords, URLs, or raw
+driver errors. Syntax validation happens on first database use and yields safe fixed errors;
+it does not assert connectivity or authentication.
+
 ## References
 
 - [Pinned Supabase image](https://github.com/supabase/postgres/blob/17.6.1.136/Dockerfile-17)
 - [Upstream post-initialization SQL hook](https://github.com/supabase/postgres/blob/17.6.1.136/migrations/db/migrate.sh)
 - [PostgreSQL psql environment lookup and quoted interpolation](https://www.postgresql.org/docs/17/app-psql.html)
 - [Docker Compose environment-file syntax](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/)
+- [Prisma configuration](https://www.prisma.io/docs/orm/v7/reference/prisma-config-reference)
+- [Prisma client generator](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators)
+- [Prisma shadow databases](https://www.prisma.io/docs/orm/v7/prisma-migrate/understanding-prisma-migrate/shadow-database)

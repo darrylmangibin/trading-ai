@@ -98,4 +98,8 @@ Follow the cited System Design sections; do not duplicate or silently change the
 
 ## Implementation Record
 
-Not started.
+- **Status (2026-10-18):** In Progress. Scoped plan approved; all six exact dependency pins installed by the user and verified. Model-free schema, guarded CLI configuration, lazy module/provider, and operating documentation drafted. User-performed client generation/validation is the next gate; final verification and new unit tests remain pending.
+- **Existing Tests Updated:** `apps/api/test/app.e2e-spec.ts` now characterizes real AppModule health, prefix, and CORS for absent, malformed, and unreachable DB configuration. Environment is set before dynamic application imports; API test mode ignores environment files.
+- **Pre-wiring evidence:** `fnm exec --using=24.17.0 cmd.exe /d /c npm run test:e2e` passed 1 file / 9 tests before importing DatabaseModule. Post-wiring HTTP/build/typecheck require the user-generated client and have not run.
+- **Interim lint:** targeted API `eslint --max-warnings=0 --fix` passed for database configuration, Prisma CLI config, root module, existing HTTP test, and both Vitest configs. Provider/factory/module lint and final format/type/build checks remain pending generation.
+- **Ownership:** no migration created/applied, no generated file hand-edited, no private configuration opened, and no rule file changed. Existing generated-source lint/format exclusions reused; Git exclusion added. New unit specifications remain assigned to `/test docker-prisma-foundation 03`.
