@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+**/src/generated/
+package-lock.json
+*.tsbuildinfo
+FOREX_AI_PRD.md
+
+# User-managed AI kit rules and canonical upstream skills
+.ai/
+.agents/skills/
+.claude/skills/
+.ai-backup/
+AGENTS.md
+CLAUDE.md

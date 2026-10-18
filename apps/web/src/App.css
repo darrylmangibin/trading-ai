@@ -1,0 +1,101 @@
+.workspace {
+  width: min(100% - 3rem, 44rem);
+  margin: clamp(4rem, 15vh, 10rem) auto;
+}
+
+.eyebrow {
+  margin-bottom: 1.5rem;
+  color: var(--accent);
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+}
+
+h1 {
+  margin: 0;
+  font-family: Bahnschrift, "Segoe UI", sans-serif;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+}
+
+.intro {
+  max-width: 36rem;
+  margin: 1.5rem 0 3rem;
+  color: var(--muted);
+  font-size: 1.125rem;
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1.75rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.connection h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status--connected {
+  color: var(--accent);
+}
+
+.status--unavailable {
+  color: #a34231;
+}
+
+button {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+button:hover:enabled {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.connection-help {
+  color: var(--muted);
+  font-size: 0.9rem;
+}

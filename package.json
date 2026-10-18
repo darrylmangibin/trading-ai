@@ -1,0 +1,40 @@
+{
+  "name": "trading",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Forex AI Trade Assistant workspace",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others --names api,web --prefix-colors cyan,green npm:dev:api npm:dev:web",
+    "dev:api": "npm run dev --workspace @trading/api",
+    "dev:web": "npm run dev --workspace @trading/web",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces && npm run lint:tooling",
+    "lint:fix": "npm run lint:fix --workspaces && npm run lint:tooling -- --fix",
+    "lint:tooling": "eslint --config eslint.config.mjs eslint.config.mjs tooling scripts --max-warnings=0",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e --workspace @trading/api",
+    "start:api": "npm run start:prod --workspace @trading/api",
+    "preview:web": "npm run preview --workspace @trading/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "concurrently": "^10.0.6",
+    "eslint": "10.13.0",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-import-x": "4.17.1",
+    "globals": "17.13.0",
+    "prettier": "^3.9.10",
+    "typescript-eslint": "8.71.2"
+  }
+}
