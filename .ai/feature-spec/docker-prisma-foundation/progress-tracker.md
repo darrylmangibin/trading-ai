@@ -2,25 +2,24 @@
 
 ## Current Phase
 
-- Planned
+- In Progress
 
 ## Current Goal
 
-- Task 01: Local Database Containers; start with `/develop docker-prisma-foundation 01`.
+- Task 03: Prisma Database Access; pre-build review and dependency gate.
 
 ## Completed
 
-- None; design approval is not implementation or verification completion.
+- Tasks 01–02 Completed: Local Database Containers and Frontend Test Infrastructure; Check PASS on 2026-10-18.
 
 ## In Progress
 
-- None; tasks 01–07 have not started.
+- Task 03 active: scoped plan approved on 2026-10-18; awaiting user-installed package pins.
+- Verification: Check 02 PASS; lint/types/format/build, 21/21 JSDOM cases, 15 covered/0 gaps; empty discovery exits 1.
 
 ## Next Up
 
-1. `/develop docker-prisma-foundation 01` — Local Database Containers.
-2. `/test docker-prisma-foundation 02` — Frontend Test Infrastructure; independent of Task 01.
-3. `/develop docker-prisma-foundation 03` — Prisma Database Access; depends on Task 01.
+1. User installs Task 03 package pins (or delegates the exact commands); resume the approved Task 03 plan.
 
 ## Open Questions
 
@@ -40,9 +39,18 @@
 - Tasks 02 and 04 are test-infrastructure tasks built by `/test`; remaining tasks use `/develop`.
 - Task 04 introduces the shared test-container image before Tasks 06/07 add API/web runtime services.
 - Exact approved architecture and conditional test-policy wording applied to four rule files.
-- Pinned dependencies are user-installed in Tasks 02/03; generation and migration gates remain user-performed.
-- Repository, package metadata, and upstream image sources inspected; no application checks or services run.
+- Task 02 exact pins agent-installed by user delegation; Task 03 dependencies, generation and migrations stay user-performed.
+- Repository, package metadata, and pinned upstream sources inspected during planning.
 - Plan verification passed: 18 design sections, all 13 criteria assigned, seven tasks of at most 101 lines.
 - Final review clarified in-container compilation and controlled identity-rejection cases; real DB evidence stays distinct.
 - ESLint 10 and Makefile adoption applied separately; Task 03 references ESLint and Task 04 includes shared lint files.
-- Tooling checks passed on Node 24.17.0: format, lint, types, builds, and 3 existing API tests; Docker tasks remain unstarted.
+- Task 01 plan, synthetic verification, guide correction and all three verifier repairs were approved.
+- No dependency, migration, client-generation or private-file change was required for Task 01.
+- Earlier verification/fix artifacts and retained synthetic volumes are recorded in Task 01.
+- Detailed acceptance evidence, local transcript paths, configuration names, and implementation notes are in Task 01.
+- Historical Check FAIL preserved; rejected port binding left a detached container, requiring forced recreation.
+- Approved guide correction and verifier sequencing/capture repair preceded the new check; no app/test edits.
+- Repeat check proved fresh identities/privileges, lifecycle persistence, safe failures and documented recovery.
+- Nine local scenarios covered with no gaps; assigned automated levels n/a; HTTP regression evidence is separate.
+- Current artifacts: `trading-test01-a26d514e/0a690168` and `trading-check01-20261018/4ecdf7e1` under local Temp.
+- All current projects down, both sentinels absent; eight new synthetic volumes retained; prior artifacts preserved.

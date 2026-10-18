@@ -95,6 +95,14 @@ This unauthenticated endpoint checks API liveness only. API tests cover the resp
 postman request http://localhost:3000/api/health --no-report-events
 ```
 
+## Local databases
+
+The [local PostgreSQL guide](docs/local-development.md) documents the database-only Docker setup:
+development at `127.0.0.1:5554`, isolated tests at `127.0.0.1:5556`, credential setup, retained
+data/configuration volumes, and failure recovery. Prepare the private root configuration from
+`.env.example`, then run `docker compose config --quiet` and
+`docker compose up -d --wait --wait-timeout 120 db-dev db-test`.
+
 ## Production builds
 
 ```powershell

@@ -1,0 +1,81 @@
+x-postgres: &postgres
+  image: supabase/postgres:17.6.1.136@sha256:f371b5f3f2ac0a05703f33d6e6134515fb2498cab708fb948a0aeb7481467c00
+  entrypoint: ["/bin/sh", "/usr/local/bin/trading-entrypoint.sh"]
+  command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+  stop_grace_period: 30s
+
+services:
+  db-dev:
+    <<: *postgres
+    environment:
+      POSTGRES_DB: postgres
+      PGDATABASE: postgres
+      POSTGRES_PASSWORD: ${DEV_DB_ADMIN_PASSWORD:?Set DEV_DB_ADMIN_PASSWORD; see docs/local-development.md}
+      BOOTSTRAP_PEER_ADMIN_PASSWORD: ${TEST_DB_ADMIN_PASSWORD:?Set TEST_DB_ADMIN_PASSWORD; see docs/local-development.md}
+      APP_DB_PASSWORD: ${DEV_DB_PASSWORD:?Set DEV_DB_PASSWORD; see docs/local-development.md}
+      BOOTSTRAP_PEER_DB_PASSWORD: ${TEST_DB_PASSWORD:?Set TEST_DB_PASSWORD; see docs/local-development.md}
+    ports:
+      - "127.0.0.1:5554:5432"
+    networks:
+      - application
+    volumes:
+      - db-dev-data:/var/lib/postgresql/data
+      - db-dev-config:/etc/postgresql-custom
+      - ./docker/postgres/entrypoint.sh:/usr/local/bin/trading-entrypoint.sh:ro
+      - ./docker/postgres/dev-init.sql:/etc/postgresql.schema.sql:ro
+    healthcheck:
+      # Service DNS authenticates passwords; image-local loopback bypasses authentication.
+      test:
+        - CMD-SHELL
+        - >-
+          PGPASSWORD="$${APP_DB_PASSWORD}" PGCONNECT_TIMEOUT=3
+          psql -X -w -h db-dev -U trading_dev -d trading_dev -c 'SELECT 1' >/dev/null 2>&1
+          && PGPASSWORD="$${POSTGRES_PASSWORD}" PGCONNECT_TIMEOUT=3
+          psql -X -w -h db-dev -U supabase_admin -d postgres -c 'SELECT 1' >/dev/null 2>&1
+          || { echo 'DB_HEALTH_FAILED: check development bootstrap and stored credentials; see docs/local-development.md'; exit 1; }
+      interval: 5s
+      timeout: 8s
+      start_period: 30s
+      retries: 5
+
+  db-test:
+    <<: *postgres
+    environment:
+      POSTGRES_DB: postgres
+      PGDATABASE: postgres
+      POSTGRES_PASSWORD: ${TEST_DB_ADMIN_PASSWORD:?Set TEST_DB_ADMIN_PASSWORD; see docs/local-development.md}
+      BOOTSTRAP_PEER_ADMIN_PASSWORD: ${DEV_DB_ADMIN_PASSWORD:?Set DEV_DB_ADMIN_PASSWORD; see docs/local-development.md}
+      APP_DB_PASSWORD: ${TEST_DB_PASSWORD:?Set TEST_DB_PASSWORD; see docs/local-development.md}
+      BOOTSTRAP_PEER_DB_PASSWORD: ${DEV_DB_PASSWORD:?Set DEV_DB_PASSWORD; see docs/local-development.md}
+    ports:
+      - "127.0.0.1:5556:5432"
+    networks:
+      - test
+    volumes:
+      - db-test-data:/var/lib/postgresql/data
+      - db-test-config:/etc/postgresql-custom
+      - ./docker/postgres/entrypoint.sh:/usr/local/bin/trading-entrypoint.sh:ro
+      - ./docker/postgres/test-init.sql:/etc/postgresql.schema.sql:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          PGPASSWORD="$${APP_DB_PASSWORD}" PGCONNECT_TIMEOUT=3
+          psql -X -w -h db-test -U trading_test -d trading_test -c 'SELECT 1' >/dev/null 2>&1
+          && PGPASSWORD="$${POSTGRES_PASSWORD}" PGCONNECT_TIMEOUT=3
+          psql -X -w -h db-test -U supabase_admin -d postgres -c 'SELECT 1' >/dev/null 2>&1
+          || { echo 'DB_HEALTH_FAILED: check test bootstrap and stored credentials; see docs/local-development.md'; exit 1; }
+      interval: 5s
+      timeout: 8s
+      start_period: 30s
+      retries: 5
+
+networks:
+  application:
+  test:
+
+volumes:
+  db-dev-data:
+  db-dev-config:
+  db-test-data:
+  db-test-config:
