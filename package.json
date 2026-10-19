@@ -21,6 +21,7 @@
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "npm run test:e2e --workspace @trading/api",
+    "test:db": "docker compose run --build --rm db-tests",
     "start:api": "npm run start:prod --workspace @trading/api",
     "preview:web": "npm run preview --workspace @trading/web",
     "format": "prettier --write .",

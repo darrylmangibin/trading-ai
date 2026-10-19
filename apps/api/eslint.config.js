@@ -52,4 +52,9 @@ export default defineConfig([
     files: ["scripts/**/*.ts", "src/commands/**/*.ts", "prisma/seeders/**/*.ts"],
     rules: { "no-console": "off" },
   },
+  {
+    files: ["src/commands/check-database.ts"],
+    // This one-shot CLI must enforce its approved deadline and fixed exit codes after flushing output.
+    rules: { "n/no-process-exit": "off" },
+  },
 ]);

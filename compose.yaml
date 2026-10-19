@@ -70,6 +70,25 @@ services:
       start_period: 30s
       retries: 5
 
+  db-tests:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: test
+      TEST_DATABASE_CONTEXT: docker
+      TEST_DATABASE_URL: ${TEST_DATABASE_URL:?Set TEST_DATABASE_URL to db-test:5432; see docs/local-development.md}
+    networks:
+      - test
+    depends_on:
+      db-test:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -ec
+      - npm run build --workspace @trading/api && npm run test:database --workspace @trading/api
+
 networks:
   application:
   test:

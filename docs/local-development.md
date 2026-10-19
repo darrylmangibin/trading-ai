@@ -1,6 +1,7 @@
 # Local PostgreSQL development
 
-Task 01 provides PostgreSQL and Task 03 adds native Prisma tooling and lazy API database access.
+Tasks 01/03 provide PostgreSQL and lazy Prisma access; Task 04 adds isolated database tests,
+and Task 05 adds the separate read-only database diagnostic.
 The applications still use the native development workflow in the [README](../README.md);
 application containers arrive in later tasks.
 
@@ -29,7 +30,7 @@ the file, resolved Compose configuration, container environment, or raw database
 | `TEST_DB_PASSWORD`        | A different nonempty raw test application password                      |
 | `DEV_DATABASE_URL`        | Development application URL below; used by later Prisma tasks           |
 | `DEV_SHADOW_DATABASE_URL` | Migration-only URL below; used by later Prisma tasks                    |
-| `TEST_DATABASE_URL`       | Isolated test URL below; used by later test tasks                       |
+| `TEST_DATABASE_URL`       | Isolated Docker test URL at `db-test:5432`; see database tests          |
 
 For example, run this separately for each password and keep the result private:
 
@@ -227,8 +228,61 @@ The API uses ConfigService, allocates its Prisma client only when database work 
 reuses that client, and disconnects an allocated client at application shutdown. Startup,
 module initialization, and `/api/health` neither validate required database credentials nor
 allocate an adapter/pool or connect. A healthy process does not establish database readiness.
-The separate connectivity diagnostic arrives in Task 05; database integration arrives in
-Task 04. Neither is provided by the current HTTP tests.
+The separate connectivity diagnostic and isolated database suite below check database behavior.
+Neither is provided by the current HTTP tests.
+
+## Read-only database diagnostic
+
+Build the current API after explicit client generation, then run its compiled diagnostic with
+`DATABASE_URL` supplied privately through the current process environment:
+
+```powershell
+npm run build --workspace @trading/api
+npm run db:check --workspace @trading/api
+```
+
+This command does not start NestJS, load an environment file, generate a client, or migrate.
+`DEV_DATABASE_URL`, `TEST_DATABASE_URL`, and `SHADOW_DATABASE_URL` are not fallbacks for
+`DATABASE_URL`. For an optional native environment file, the developer can explicitly invoke
+Node from the repository root instead:
+
+```powershell
+node --env-file=apps/api/.env apps/api/dist/commands/check-database.js
+```
+
+Keep that file private. The diagnostic uses the existing PostgreSQL URL validation: provide
+an explicit scheme, login, password, host, port, and database, without query parameters or
+fragments. It runs only Prisma `SELECT 1` and awaits disconnection. There are no writes or
+automatic retries. Startup and `/api/health` remain independent of database availability.
+
+| Result              | Exit code | Corrective action                                                                 |
+| ------------------- | --------- | --------------------------------------------------------------------------------- |
+| `DB_OK`             | 0         | Query and cleanup succeeded; no action needed.                                    |
+| `DB_CONFIG_INVALID` | 2         | Supply a valid explicit `DATABASE_URL`, then retry.                               |
+| `DB_UNAVAILABLE`    | 1         | Check the local service, connection settings, and stored credentials, then retry. |
+| `DB_TIMEOUT`        | 1         | Check the local service or stalled connection, then retry explicitly.             |
+
+Output is one fixed result line with an instruction, without supplied URLs, passwords, or
+raw Prisma/driver errors. One overall 5,000 ms deadline starts at command entry before loading
+Prisma. Validation, allocation, the query, and cleanup all consume that budget. Driver limits
+use the remaining budget at allocation; the shared deadline prevents their phases accumulating
+extra time. A watchdog ends only this diagnostic process if loading, I/O, or cleanup stalls.
+Node process launch and OS scheduling are outside that internal budget; process-level evidence
+must record any launch/scheduling tolerance separately rather than increasing the deadline.
+
+The existing `db-tests` service can run the same compiled entry before API containers arrive.
+Start `db-test` and provide the test-only Compose configuration documented below, then use:
+
+```powershell
+docker compose run --build --rm --no-deps db-tests /bin/sh -ec 'npm run build --workspace @trading/api && DATABASE_URL="$TEST_DATABASE_URL" npm run db:check --workspace @trading/api'
+```
+
+This invocation uses only the isolated test network and its test URL. The assignment applies
+only to the diagnostic child; the test harness itself still reads only `TEST_DATABASE_URL`.
+It does not require a future API runtime service. The container builds current source first
+and uses the existing generated client; host `dist` is excluded. A missing client is a setup
+failure requiring the explicit generation step above. No command automatically resets data
+or changes ports when a diagnostic fails.
 
 ## Reviewed schema changes and migrations
 
@@ -275,6 +329,92 @@ Record those identities and command outcomes only; do not share passwords, URLs,
 driver errors. Syntax validation happens on first database use and yields safe fixed errors;
 it does not assert connectivity or authentication.
 
+## Isolated database tests
+
+Task 04 adds a separate Vitest database level and the shared development image. Existing
+API unit/HTTP and web component suites remain database-free. The root aggregate test command
+is changed in Task 07; run the database level explicitly after the other levels.
+
+Generate the client explicitly as documented above, then prepare root Compose configuration.
+`TEST_DATABASE_URL` in the root `.env` must use the **container** endpoint, with the same
+percent-encoded password as `TEST_DB_PASSWORD`:
+
+```text
+postgresql://trading_test:<encoded-test-password>@db-test:5432/trading_test
+```
+
+Only the test URL, `TEST_DATABASE_CONTEXT=docker`, and `NODE_ENV=test` are supplied to
+`db-tests`. It receives no development, shadow, or administrator credentials, no private file
+mount, and no Docker socket. Its sole network is `test`; it cannot resolve the development
+service on the separate `application` network. The `test` profile keeps it out of ordinary
+startup. Compose validates the existing database password inputs even for a test run, but
+does not forward them to the runner.
+
+From the repository root:
+
+```powershell
+docker compose config --quiet
+npm run test:db
+npm run test:db
+```
+
+The exact root script is `docker compose run --build --rm db-tests`. Compose waits for the
+test database's authenticated health check. Each one-shot container builds the API and then
+runs `npm run test:database --workspace @trading/api`. Build provides compiled fixtures for
+later command tests; it never generates a client or migrates. An absent generated client
+fails image creation with `PRISMA_CLIENT_MISSING` and the explicit recovery command. Failed
+builds, absent tests, refused configuration, unavailable infrastructure, or failed assertions
+return a nonzero result. Correct the cause and rerun; no fallback target, retry, port change,
+volume reset, or implicit generation is provided. `--rm` removes the runner, while database
+services and their volumes follow the normal stop/down workflow above.
+
+`Dockerfile.dev` pins Node 24.17.0 and installs the locked workspace packages inside Linux
+with `npm ci --ignore-scripts`, without dependency lifecycle hooks. It copies the already
+generated source client and root/application lint configuration, including `tooling/eslint/`.
+The mandatory `.dockerignore` excludes private env/credential/key paths, host dependencies,
+dist, coverage, and transient output. No build argument or layer contains database credentials.
+
+Native execution has an explicit API build prerequisite. Privately supply only the test URL
+through the current process environment using `localhost` or `127.0.0.1:5556`, login/database
+`trading_test`, and `TEST_DATABASE_CONTEXT=native`. Do not load an API development env file:
+
+```powershell
+# TEST_DATABASE_URL is supplied privately in this shell, never pasted into output.
+$env:NODE_ENV = 'test'
+$env:TEST_DATABASE_CONTEXT = 'native'
+npm run build --workspace @trading/api
+npm run test:database --workspace @trading/api
+```
+
+The harness reads only `TEST_DATABASE_URL` and `TEST_DATABASE_CONTEXT`; `DATABASE_URL` is
+never a fallback. Both contexts require an explicit PostgreSQL scheme, password, port,
+database, and login. Queries, fragments, remote/development/shadow endpoints, malformed
+encoding, and mismatched or absent contexts fail before adapter/pool allocation. Errors
+contain fixed instructions and omit supplied URLs, passwords, and raw driver causes.
+
+`vitest.config.database.ts` discovers only `test/database/**/*.db-spec.ts`, uses one worker
+without file parallelism, and fails on an empty suite. These files do not match either
+existing source-unit or HTTP discovery. The target-guard specification uses controlled query
+results to prove refusal before fixture DDL for wrong identity and excessive privileges;
+these are **logic-double cases**, not claims of real server rejection. `prisma.db-spec.ts`
+uses **real PostgreSQL** to verify database/current/authenticated login `trading_test`,
+CONNECT/TEMP access, and the absence of administrative, privileged-role, database ownership,
+and permanent-schema creation authority.
+
+Each temporary `prisma_probe` is created only after that identity query on the same
+transaction connection. Parameterized writes/readbacks, commit cleanup, callback/SQL-error
+rollback, repeatability, and independent simultaneous connections are tested. `ON COMMIT
+DROP` and rollback remove only the transaction-local fixture. No model, migration, or
+permanent application table is created.
+
+For development preservation evidence, use the uniquely identified sentinel procedure
+above **outside** the runner: create and read the sentinel as the development login before
+both database-suite runs; reread its exact value afterward; drop only that identified table.
+Record commands, local project identity, before/after result, and cleanup without credentials.
+The runner must never receive development credentials to perform this comparison. Verification
+may use a separately named project with distinct synthetic credentials and new owned volumes;
+never redirect tests to another project's development data or remove its resources.
+
 ## References
 
 - [Pinned Supabase image](https://github.com/supabase/postgres/blob/17.6.1.136/Dockerfile-17)
@@ -284,3 +424,5 @@ it does not assert connectivity or authentication.
 - [Prisma configuration](https://www.prisma.io/docs/orm/v7/reference/prisma-config-reference)
 - [Prisma client generator](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators)
 - [Prisma shadow databases](https://www.prisma.io/docs/orm/v7/prisma-migrate/understanding-prisma-migrate/shadow-database)
+- [PostgreSQL driver client timeouts](https://node-postgres.com/apis/client)
+- [Node.js process exit and output flushing](https://nodejs.org/docs/latest-v24.x/api/process.html#processexitcode)

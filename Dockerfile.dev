@@ -1,0 +1,25 @@
+FROM node:24.17.0-bookworm-slim@sha256:862263c612aa437e3037674b85419622a9d93bff80aa1eee5398dfe686375532
+
+WORKDIR /workspace
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+# Install Linux dependencies without package lifecycle hooks or implicit Prisma generation.
+RUN npm ci --ignore-scripts
+
+COPY .node-version .prettierrc.json .prettierignore eslint.config.mjs ./
+COPY tooling/eslint/ ./tooling/eslint/
+COPY scripts/ ./scripts/
+COPY apps/api/*.json apps/api/*.ts apps/api/*.js ./apps/api/
+COPY apps/api/prisma/ ./apps/api/prisma/
+COPY apps/api/src/ ./apps/api/src/
+COPY apps/api/test/ ./apps/api/test/
+# The directory COPY also permits optional Jest setup to be absent before Task 02.
+# .dockerignore excludes private configuration and all host build/dependency output.
+COPY apps/web/ ./apps/web/
+
+RUN test -f apps/api/src/generated/prisma/client.ts || \
+    { echo 'PRISMA_CLIENT_MISSING: explicitly run npm run prisma:generate --workspace @trading/api on the host, then rebuild; startup never generates or migrates.'; exit 1; }
+
+CMD ["npm", "run", "build", "--workspace", "@trading/api"]
